@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+python-keycloak
+pydantic
+pydantic-settings
