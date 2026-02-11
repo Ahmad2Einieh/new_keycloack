@@ -1,8 +1,8 @@
 from typing import List, Optional, Dict, Any, Set, Tuple
 from fastapi import HTTPException, Query
 from keycloak.exceptions import KeycloakError
-from ..core.config import get_admin_client
-from ..utils.helpers import (
+from core.config import get_admin_client
+from utils.helpers import (
     normalize_kc_list,
     ensure_orgs_exist,
     get_group_id_by_path,
@@ -46,7 +46,8 @@ class UserService:
             if not is_super and (org_name, team_name) not in managed_teams and org_name not in admin_orgs:
                 raise HTTPException(
                     status_code=403, detail="Not allowed to list users for this team")
-            team_group_id = get_group_id_by_path(kc, f"/{org_name}/{team_name}")
+            team_group_id = get_group_id_by_path(
+                kc, f"/{org_name}/{team_name}")
             if not team_group_id:
                 raise HTTPException(status_code=404, detail="Team not found")
             return list_members_recursive(kc, team_group_id)
@@ -82,7 +83,8 @@ class UserService:
                     all_users.extend(list_members_recursive(kc, gid))
             return unique_users(all_users)
 
-        raise HTTPException(status_code=403, detail="Not allowed to list users")
+        raise HTTPException(
+            status_code=403, detail="Not allowed to list users")
 
     @staticmethod
     def create_user(payload: dict, actor: dict) -> dict:
@@ -129,7 +131,8 @@ class UserService:
                 "credentials": [{"value": payload.get('password'), "type": "password", "temporary": False}]
             })
         except KeycloakError as e:
-            raise HTTPException(status_code=409, detail=f"User likely exists: {e}")
+            raise HTTPException(
+                status_code=409, detail=f"User likely exists: {e}")
 
         # Add to /Org/user groups
         added_to: List[str] = []

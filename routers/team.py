@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends
-from ..services.team_service import TeamService
-from ..models.team import TeamCreate
-from ..models.user import AddUserRole
-from ..core.security import OrgAdminChecker, TeamManagerChecker
+from services.team_service import TeamService
+from models.team import TeamCreate
+from models.user import AddUserRole
+from core.security import OrgAdminChecker, TeamManagerChecker
 
-team_router = APIRouter(prefix="/organizations/{org_name}/teams", tags=["Teams"])
+team_router = APIRouter(
+    prefix="/organizations/{org_name}/teams", tags=["Teams"])
 
 
 @team_router.post("")

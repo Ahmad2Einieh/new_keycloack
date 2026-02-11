@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from keycloak.exceptions import KeycloakError
-from ..core.config import get_admin_client
-from ..utils.helpers import (
+from core.config import get_admin_client
+from utils.helpers import (
     validate_group_name_not_reserved,
     normalize_kc_name,
     get_group_id_by_path,
@@ -17,12 +17,14 @@ class TeamService:
         """Create a new team within an organization."""
         kc = get_admin_client()
         org_name = normalize_kc_name(org_name) or org_name
-        team_name = validate_group_name_not_reserved(team_data.get('name'), kind="Team")
+        team_name = validate_group_name_not_reserved(
+            team_data.get('name'), kind="Team")
         manager_username = normalize_kc_name(team_data.get('manager_username'))
 
         org_group_id = get_group_id_by_path(kc, f"/{org_name}")
         if not org_group_id:
-            raise HTTPException(status_code=404, detail="Organization not found")
+            raise HTTPException(
+                status_code=404, detail="Organization not found")
 
         # Create Team Group
         try:

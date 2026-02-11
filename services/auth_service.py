@@ -1,6 +1,6 @@
-from fastapi import HTTPException, status, Body
+from fastapi import HTTPException
 from keycloak.exceptions import KeycloakError
-from ..core.config import keycloak_openid
+from core.config import keycloak_openid
 
 
 class AuthService:
@@ -20,7 +20,8 @@ class AuthService:
         try:
             return keycloak_openid.refresh_token(refresh_token)
         except KeycloakError:
-            raise HTTPException(status_code=400, detail="Invalid Refresh Token")
+            raise HTTPException(
+                status_code=400, detail="Invalid Refresh Token")
 
     @staticmethod
     def logout(refresh_token: str) -> dict:

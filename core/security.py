@@ -1,7 +1,6 @@
-from typing import List
 from fastapi import Depends, HTTPException, status, Path, Request
-from .config import keycloak_openid, get_admin_client, oauth2_scheme
-from ..utils.helpers import normalize_kc_name
+from config import keycloak_openid
+from utils.helpers import normalize_kc_name
 
 
 async def get_current_user(request: Request):

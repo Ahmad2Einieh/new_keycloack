@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Response, Request, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from ..services.auth_service import AuthService
-from ..models.user import UserUpdate, PasswordUpdate, UserResponse
-from ..core.security import get_current_user
+from services.auth_service import AuthService
+from models.user import UserUpdate, PasswordUpdate, UserResponse
+from core.security import get_current_user
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -41,7 +41,8 @@ async def refresh_token(request: Request, response: Response):
     refresh_token = request.cookies.get("refresh_token")
 
     if not refresh_token:
-        raise HTTPException(status_code=401, detail="Refresh token not found in cookies")
+        raise HTTPException(
+            status_code=401, detail="Refresh token not found in cookies")
 
     tokens = AuthService.refresh_token(refresh_token)
 

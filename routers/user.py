@@ -1,8 +1,8 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
-from ..services.user_service import UserService
-from ..models.user import UserCreate, UserResponse, AddUserRole
-from ..core.security import get_current_user, check_super_admin
+from services.user_service import UserService
+from models.user import UserCreate, UserResponse, AddUserRole
+from core.security import get_current_user, check_super_admin
 
 user_router = APIRouter(prefix="/users", tags=["Users"])
 

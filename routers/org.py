@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
-from ..services.org_service import OrgService
-from ..models.org import OrgCreate, OrgResponse
-from ..models.user import AddUserRole
-from ..core.security import get_current_user, check_super_admin, OrgAdminChecker
+from services.org_service import OrgService
+from models.org import OrgCreate, OrgResponse
+from models.user import AddUserRole
+from core.security import get_current_user, check_super_admin, OrgAdminChecker
 
 org_router = APIRouter(prefix="/organizations", tags=["Organizations"])
 
