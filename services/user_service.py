@@ -1,5 +1,5 @@
-from typing import List, Optional, Dict, Any, Set, Tuple
-from fastapi import HTTPException, Query
+from typing import List, Optional, Dict, Any
+from fastapi import HTTPException
 from keycloak.exceptions import KeycloakError
 from core.config import get_admin_client
 from utils.helpers import (
@@ -124,7 +124,6 @@ class UserService:
         try:
             new_user_id = kc.create_user({
                 "email": (payload.get('email') or "").strip().lower(),
-                "username": (payload.get('username') or "").strip().lower(),
                 "enabled": True,
                 "firstName": payload.get('first_name'),
                 "lastName": payload.get('last_name'),

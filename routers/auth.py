@@ -1,16 +1,15 @@
 from fastapi import APIRouter, Depends, Response, Request, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
 from services.auth_service import AuthService
-from models.user import UserUpdate, PasswordUpdate, UserResponse
+from models.user import LoginRequest, UserUpdate, PasswordUpdate, UserResponse
 from core.security import get_current_user
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @auth_router.post("/login")
-async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(response: Response, form_data:  LoginRequest = Depends()):
     """Authenticate user and set tokens in HTTP-only cookies."""
-    tokens = AuthService.login(form_data.username, form_data.password)
+    tokens = AuthService.login(form_data.email, form_data.password)
 
     # Set access token cookie (short-lived)
     response.set_cookie(
@@ -27,7 +26,7 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
         key="refresh_token",
         value=tokens["refresh_token"],
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
+        secure=False,  # Set to True in production with HT  TPS
         samesite="lax",
         max_age=tokens.get("refresh_expires_in", 86400)
     )

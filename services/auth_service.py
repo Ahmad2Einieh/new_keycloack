@@ -7,10 +7,10 @@ class AuthService:
     """Service for authentication operations."""
 
     @staticmethod
-    def login(username: str, password: str) -> dict:
+    def login(email: str, password: str) -> dict:
         """Authenticate user and return token."""
         try:
-            return keycloak_openid.token(username, password)
+            return keycloak_openid.token(email, password)
         except KeycloakError:
             raise HTTPException(status_code=401, detail="Invalid Credentials")
 
