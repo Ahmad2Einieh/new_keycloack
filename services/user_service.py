@@ -27,7 +27,7 @@ class UserService:
         - Org-admin: list users under their org(s). If org_name specified, must be one they admin.
         - Team-manager: list users under their team(s). If org_name+team_name specified, must be one they manage.
         """
-        from ..utils.helpers import list_members_recursive, unique_users
+        from utils.helpers import list_members_recursive, unique_users
 
         kc = get_admin_client()
         groups = [g.lower() for g in (user.get('groups', []) or [])]
@@ -95,7 +95,7 @@ class UserService:
         - If payload.orgs omitted and actor is org-admin: defaults to all orgs the actor admins.
         - Super-admin can create users and optionally add them to any orgs.
         """
-        from ..utils.helpers import get_user_id_by_username
+        from utils.helpers import get_user_id_by_username
 
         kc = get_admin_client()
         groups = [g.lower() for g in (actor.get('groups', []) or [])]

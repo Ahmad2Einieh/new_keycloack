@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any, Set, Tuple
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from keycloak.exceptions import KeycloakError
 
 

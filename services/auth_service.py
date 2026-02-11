@@ -35,26 +35,40 @@ class AuthService:
     @staticmethod
     def get_my_profile(user_id: str) -> dict:
         """Get current user profile."""
-        from ..core.config import get_admin_client
+        from core.config import get_admin_client
         kc = get_admin_client()
         return kc.get_user(user_id)
 
     @staticmethod
     def update_my_profile(user_id: str, update_data: dict) -> dict:
         """Update current user profile."""
-        from ..core.config import get_admin_client
+        from core.config import get_admin_client
         kc = get_admin_client()
-        payload = {k: v for k, v in update_data.items() if v is not None}
+
+        # Map snake_case field names to Keycloak's camelCase
+        field_mapping = {
+            "first_name": "firstName",
+            "last_name": "lastName",
+            "email": "email",
+        }
+
+        payload = {
+            field_mapping.get(k, k): v
+            for k, v in update_data.items()
+            if v is not None
+        }
+
         try:
             kc.update_user(user_id, payload)
             return {"message": "Profile updated successfully"}
         except KeycloakError as e:
+            print(e)
             raise HTTPException(status_code=400, detail=f"Update failed: {e}")
 
     @staticmethod
     def update_my_password(user_id: str, new_password: str) -> dict:
         """Update current user password."""
-        from ..core.config import get_admin_client
+        from core.config import get_admin_client
         kc = get_admin_client()
         try:
             kc.set_user_password(user_id, new_password, temporary=False)
@@ -66,7 +80,7 @@ class AuthService:
     @staticmethod
     def send_verification_email(user_id: str) -> dict:
         """Send verification email to current user."""
-        from ..core.config import get_admin_client
+        from core.config import get_admin_client
         kc = get_admin_client()
         try:
             kc.send_verify_email(user_id=user_id)
@@ -78,7 +92,7 @@ class AuthService:
     @staticmethod
     def get_my_memberships(user: dict) -> dict:
         """Get current user's memberships (orgs, teams, roles)."""
-        from ..utils.helpers import parse_user_orgs, parse_admin_orgs, parse_managed_teams, parse_member_teams
+        from utils.helpers import parse_user_orgs, parse_admin_orgs, parse_managed_teams, parse_member_teams
 
         groups = [g.lower() for g in (user.get('groups', []) or [])]
         orgs = sorted(list(parse_user_orgs(groups)))

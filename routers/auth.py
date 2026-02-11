@@ -95,7 +95,7 @@ async def get_my_profile(user: dict = Depends(get_current_user)):
 @auth_router.put("/me/profile")
 async def update_my_profile(update_data: UserUpdate, user: dict = Depends(get_current_user)):
     """Update current user profile."""
-    return AuthService.update_my_profile(user['sub'], update_data.dict())
+    return AuthService.update_my_profile(user['sub'], update_data.model_dump())
 
 
 @auth_router.put("/me/password")

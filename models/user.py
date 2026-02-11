@@ -3,7 +3,6 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreate(BaseModel):
-    username: str
     email: EmailStr
     password: str
     first_name: str
@@ -18,7 +17,7 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    # email: Optional[EmailStr] = None
 
 
 class PasswordUpdate(BaseModel):

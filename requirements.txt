@@ -3,3 +3,4 @@ uvicorn
 python-keycloak
 pydantic
 pydantic-settings
+PyJWT

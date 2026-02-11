@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, status, Path, Request
-from config import keycloak_openid
 from utils.helpers import normalize_kc_name
+from core.config import keycloak_openid
+import jwt
 
 
 async def get_current_user(request: Request):
@@ -18,14 +19,22 @@ async def get_current_user(request: Request):
         )
 
     try:
-        user_info = keycloak_openid.decode_token(
+        # Decode JWT manually with proper options
+        # Format the public key with PEM headers
+        public_key = keycloak_openid.public_key()
+        if not public_key.startswith("-----BEGIN"):
+            public_key = f"-----BEGIN PUBLIC KEY-----\n{public_key}\n-----END PUBLIC KEY-----"
+
+        user_info = jwt.decode(
             token,
-            key=keycloak_openid.public_key(),
+            key=public_key,
+            algorithms=["RS256"],
             options={"verify_signature": True,
-                     "verify_aud": False, "exp": True}
+                     "verify_aud": False, "verify_exp": True}
         )
         return user_info
-    except Exception:
+    except Exception as e:
+        print(e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
