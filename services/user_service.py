@@ -156,14 +156,18 @@ class UserService:
             else:
                 requested_orgs = requested_orgs or []
 
+            # If no orgs specified, add to default org with user role
+            if not requested_orgs:
+                requested_orgs = ["default"]
+                logger.info(f"No orgs specified, adding user to default org - email: {email}")
+
             # Validate orgs exist
-            if requested_orgs:
-                ensure_orgs_exist(kc, requested_orgs)
+            ensure_orgs_exist(kc, requested_orgs)
 
             try:
                 new_user_id = kc.create_user({
                     "email": (payload.get('email') or "").strip().lower(),
-                    "enabled": True,
+                    "enabled": False,
                     "firstName": payload.get('first_name'),
                     "lastName": payload.get('last_name'),
                     "credentials": [{"value": payload.get('password'), "type": "password", "temporary": True}]

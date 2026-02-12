@@ -118,8 +118,8 @@ class AuthService:
 
     @staticmethod
     def verify_email_and_update_password(user_id: str, new_password: str) -> dict:
-        """Verify email and update password for the current user."""
-        logger.info(f"Verifying email and updating password for user_id: {user_id}")
+        """Verify email, enable user and update password for the current user."""
+        logger.info(f"Verifying email, enabling user and updating password for user_id: {user_id}")
         try:
             from core.config import get_admin_client
             kc = get_admin_client()
@@ -127,16 +127,17 @@ class AuthService:
             # Get current user data
             user_data = kc.get_user(user_id)
 
-            # Update email verification status
+            # Update email verification status and enable user
             user_data['emailVerified'] = True
+            user_data['enabled'] = True
             kc.update_user(user_id, user_data)
 
             # Update password
             kc.set_user_password(user_id, new_password, temporary=False)
 
             logger.info(
-                f"Email verified and password updated successfully for user_id: {user_id}")
-            return {"message": "Email verified and password updated successfully"}
+                f"Email verified, user enabled and password updated successfully for user_id: {user_id}")
+            return {"message": "Email verified, user enabled and password updated successfully"}
         except KeycloakError as e:
             log_error(logger, e, {"user_id": user_id,
                       "action": "verify_email_and_update_password"})
