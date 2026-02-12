@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from services.user_service import UserService
-from models.user import UserCreate, UserResponse, AddUserRole
+from models.user import UserCreate, UserResponse
 from core.security import get_current_user, check_super_admin
 from core.logger import get_logger, log_error
 
@@ -19,7 +19,8 @@ async def list_users(
 ):
     """List users based on role and scope."""
     actor_id = user.get('sub')
-    logger.debug(f"Listing users - org: {org_name}, team: {team_name}, actor: {actor_id}")
+    logger.debug(
+        f"Listing users - org: {org_name}, team: {team_name}, actor: {actor_id}")
     try:
         result = UserService.list_users(org_name, team_name, user)
         logger.debug(f"Listed {len(result)} users for actor: {actor_id}")
@@ -41,7 +42,8 @@ async def create_user(payload: UserCreate, actor: dict = Depends(get_current_use
     logger.info(f"Creating user - email: {payload.email}, actor: {actor_id}")
     try:
         result = UserService.create_user(payload.dict(), actor)
-        logger.info(f"User created successfully - id: {result.get('id')}, actor: {actor_id}")
+        logger.info(
+            f"User created successfully - id: {result.get('id')}, actor: {actor_id}")
         return result
     except Exception as e:
         log_error(logger, e, {
@@ -77,7 +79,8 @@ async def delete_user(user_id: str, admin: dict = Depends(check_super_admin)):
     logger.warning(f"Deleting user - user_id: {user_id}, admin: {admin_id}")
     try:
         result = UserService.delete_user(user_id)
-        logger.warning(f"User deleted successfully - user_id: {user_id}, admin: {admin_id}")
+        logger.warning(
+            f"User deleted successfully - user_id: {user_id}, admin: {admin_id}")
         return result
     except Exception as e:
         log_error(logger, e, {

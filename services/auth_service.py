@@ -19,7 +19,16 @@ class AuthService:
             return result
         except KeycloakError as e:
             log_error(logger, e, {"email": email, "action": "login"})
-            raise HTTPException(status_code=401, detail="Invalid Credentials")
+            # Extract error description from Keycloak error
+            error_msg = "Invalid Credentials"
+            if hasattr(e, 'response_body') and e.response_body:
+                import json
+                try:
+                    error_body = json.loads(e.response_body)
+                    error_msg = error_body.get('error_description', error_msg)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            raise HTTPException(status_code=401, detail=error_msg)
 
     @staticmethod
     def refresh_token(refresh_token: str) -> dict:
@@ -63,7 +72,8 @@ class AuthService:
     @staticmethod
     def update_my_profile(user_id: str, update_data: dict) -> dict:
         """Update current user profile."""
-        logger.info(f"Updating profile for user_id: {user_id}, data: {list(update_data.keys())}")
+        logger.info(
+            f"Updating profile for user_id: {user_id}, data: {list(update_data.keys())}")
         try:
             from core.config import get_admin_client
             kc = get_admin_client()
@@ -85,7 +95,8 @@ class AuthService:
             logger.info(f"Profile updated successfully for user_id: {user_id}")
             return {"message": "Profile updated successfully"}
         except KeycloakError as e:
-            log_error(logger, e, {"user_id": user_id, "action": "update_profile"})
+            log_error(logger, e, {"user_id": user_id,
+                      "action": "update_profile"})
             raise HTTPException(status_code=400, detail=f"Update failed: {e}")
 
     @staticmethod
@@ -96,27 +107,41 @@ class AuthService:
             from core.config import get_admin_client
             kc = get_admin_client()
             kc.set_user_password(user_id, new_password, temporary=False)
-            logger.info(f"Password updated successfully for user_id: {user_id}")
+            logger.info(
+                f"Password updated successfully for user_id: {user_id}")
             return {"message": "Password updated successfully"}
         except KeycloakError as e:
-            log_error(logger, e, {"user_id": user_id, "action": "update_password"})
+            log_error(logger, e, {"user_id": user_id,
+                      "action": "update_password"})
             raise HTTPException(
                 status_code=400, detail=f"Password update failed: {e}")
 
     @staticmethod
-    def send_verification_email(user_id: str) -> dict:
-        """Send verification email to current user."""
-        logger.info(f"Sending verification email for user_id: {user_id}")
+    def verify_email_and_update_password(user_id: str, new_password: str) -> dict:
+        """Verify email and update password for the current user."""
+        logger.info(f"Verifying email and updating password for user_id: {user_id}")
         try:
             from core.config import get_admin_client
             kc = get_admin_client()
-            kc.send_verify_email(user_id=user_id)
-            logger.info(f"Verification email sent successfully for user_id: {user_id}")
-            return {"message": "Verification email sent"}
+
+            # Get current user data
+            user_data = kc.get_user(user_id)
+
+            # Update email verification status
+            user_data['emailVerified'] = True
+            kc.update_user(user_id, user_data)
+
+            # Update password
+            kc.set_user_password(user_id, new_password, temporary=False)
+
+            logger.info(
+                f"Email verified and password updated successfully for user_id: {user_id}")
+            return {"message": "Email verified and password updated successfully"}
         except KeycloakError as e:
-            log_error(logger, e, {"user_id": user_id, "action": "send_verification_email"})
+            log_error(logger, e, {"user_id": user_id,
+                      "action": "verify_email_and_update_password"})
             raise HTTPException(
-                status_code=400, detail=f"Failed to send email: {e}")
+                status_code=400, detail=f"Update failed: {e}")
 
     @staticmethod
     def get_my_memberships(user: dict) -> dict:
@@ -144,5 +169,6 @@ class AuthService:
             logger.debug(f"Memberships retrieved for user_id: {user_id}")
             return result
         except Exception as e:
-            log_error(logger, e, {"user_id": user_id, "action": "get_memberships"})
+            log_error(logger, e, {"user_id": user_id,
+                      "action": "get_memberships"})
             raise

@@ -24,9 +24,11 @@ class UserService:
         try:
             user_groups = kc.get_user_groups(user.get("id"))
             # Extract group paths
-            user["groups"] = [g.get("path", "") for g in user_groups if g.get("path")]
+            user["groups"] = [g.get("path", "")
+                              for g in user_groups if g.get("path")]
         except KeycloakError as e:
-            logger.warning(f"Failed to fetch groups for user {user.get('id')}: {e}")
+            logger.warning(
+                f"Failed to fetch groups for user {user.get('id')}: {e}")
             user["groups"] = []
         return user
 
@@ -45,7 +47,8 @@ class UserService:
         from utils.helpers import list_members_recursive, unique_users
 
         actor_id = user.get('sub', 'unknown')
-        logger.debug(f"Listing users - org: {org_name}, team: {team_name}, actor: {actor_id}")
+        logger.debug(
+            f"Listing users - org: {org_name}, team: {team_name}, actor: {actor_id}")
         try:
             kc = get_admin_client()
             groups = [g.lower() for g in (user.get('groups', []) or [])]
@@ -67,7 +70,8 @@ class UserService:
                 team_group_id = get_group_id_by_path(
                     kc, f"/{org_name}/{team_name}")
                 if not team_group_id:
-                    raise HTTPException(status_code=404, detail="Team not found")
+                    raise HTTPException(
+                        status_code=404, detail="Team not found")
                 users = list_members_recursive(kc, team_group_id)
                 return [UserService.enrich_user_with_groups(kc, u) for u in users]
 
@@ -162,7 +166,7 @@ class UserService:
                     "enabled": True,
                     "firstName": payload.get('first_name'),
                     "lastName": payload.get('last_name'),
-                    "credentials": [{"value": payload.get('password'), "type": "password", "temporary": False}]
+                    "credentials": [{"value": payload.get('password'), "type": "password", "temporary": True}]
                 })
             except KeycloakError as e:
                 log_error(logger, e, {"email": email, "action": "create_user"})
@@ -194,7 +198,8 @@ class UserService:
                     raise HTTPException(
                         status_code=400, detail=f"Failed to add user to org '{org}': {e}")
 
-            logger.info(f"User created successfully - id: {new_user_id}, email: {email}, orgs: {added_to}")
+            logger.info(
+                f"User created successfully - id: {new_user_id}, email: {email}, orgs: {added_to}")
             return {"message": "User created", "id": new_user_id, "added_to_orgs": added_to}
         except HTTPException:
             raise
@@ -218,7 +223,8 @@ class UserService:
             if "/super-admin" in groups:
                 try:
                     user = kc.get_user(user_id)
-                    logger.debug(f"User retrieved successfully - user_id: {user_id}")
+                    logger.debug(
+                        f"User retrieved successfully - user_id: {user_id}")
                     return UserService.enrich_user_with_groups(kc, user)
                 except KeycloakError:
                     log_error(logger, Exception("User not found"), {
@@ -226,19 +232,22 @@ class UserService:
                         "actor_id": actor_id,
                         "action": "get_user"
                     })
-                    raise HTTPException(status_code=404, detail="User not found")
+                    raise HTTPException(
+                        status_code=404, detail="User not found")
 
             scope_orgs = parse_admin_orgs(groups)
             scope_teams = parse_managed_teams(groups)
 
             if not is_user_in_scope(kc, user_id, scope_orgs, scope_teams):
-                logger.warning(f"Access denied - actor: {actor_id}, target_user: {user_id}")
+                logger.warning(
+                    f"Access denied - actor: {actor_id}, target_user: {user_id}")
                 raise HTTPException(
                     status_code=403, detail="Not allowed to view this user")
 
             try:
                 user = kc.get_user(user_id)
-                logger.debug(f"User retrieved successfully - user_id: {user_id}")
+                logger.debug(
+                    f"User retrieved successfully - user_id: {user_id}")
                 return UserService.enrich_user_with_groups(kc, user)
             except KeycloakError:
                 log_error(logger, Exception("User not found"), {
@@ -250,7 +259,8 @@ class UserService:
         except HTTPException:
             raise
         except Exception as e:
-            log_error(logger, e, {"target_user_id": user_id, "actor_id": actor_id, "action": "get_user"})
+            log_error(logger, e, {"target_user_id": user_id,
+                      "actor_id": actor_id, "action": "get_user"})
             raise
 
     @staticmethod
@@ -261,13 +271,16 @@ class UserService:
             kc = get_admin_client()
             try:
                 kc.delete_user(user_id)
-                logger.warning(f"User deleted successfully - user_id: {user_id}")
+                logger.warning(
+                    f"User deleted successfully - user_id: {user_id}")
                 return {"message": "User deleted"}
             except KeycloakError as e:
-                log_error(logger, e, {"target_user_id": user_id, "action": "delete_user"})
+                log_error(
+                    logger, e, {"target_user_id": user_id, "action": "delete_user"})
                 raise HTTPException(status_code=404, detail="User not found")
         except HTTPException:
             raise
         except Exception as e:
-            log_error(logger, e, {"target_user_id": user_id, "action": "delete_user"})
+            log_error(
+                logger, e, {"target_user_id": user_id, "action": "delete_user"})
             raise

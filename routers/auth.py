@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Response, Request, HTTPException
 from services.auth_service import AuthService
-from models.user import LoginRequest, UserUpdate, PasswordUpdate, UserResponse
+from models.user import LoginRequest, UserUpdate, PasswordUpdate, UserResponse, VerifyEmailAndPasswordUpdate
 from core.security import get_current_user
 from core.logger import get_logger, log_error
 
@@ -123,7 +123,8 @@ async def update_my_profile(update_data: UserUpdate, user: dict = Depends(get_cu
     user_id = user.get('sub')
     logger.info(f"Updating profile for user_id: {user_id}")
     try:
-        result = AuthService.update_my_profile(user_id, update_data.model_dump())
+        result = AuthService.update_my_profile(
+            user_id, update_data.model_dump())
         logger.info(f"Profile updated successfully for user_id: {user_id}")
         return result
     except Exception as e:
@@ -145,20 +146,6 @@ async def update_my_password(pwd: PasswordUpdate, user: dict = Depends(get_curre
         raise
 
 
-@auth_router.post("/me/verify-email")
-async def send_verification_email(user: dict = Depends(get_current_user)):
-    """Send verification email to current user."""
-    user_id = user.get('sub')
-    logger.info(f"Sending verification email for user_id: {user_id}")
-    try:
-        result = AuthService.send_verification_email(user_id)
-        logger.info(f"Verification email sent successfully for user_id: {user_id}")
-        return result
-    except Exception as e:
-        log_error(logger, e, {"user_id": user_id, "action": "send_verification_email"})
-        raise
-
-
 @auth_router.get("/me/memberships")
 async def my_memberships(user: dict = Depends(get_current_user)):
     """Get current user's memberships (orgs, teams, roles)."""
@@ -166,8 +153,24 @@ async def my_memberships(user: dict = Depends(get_current_user)):
     logger.debug(f"Fetching memberships for user_id: {user_id}")
     try:
         result = AuthService.get_my_memberships(user)
-        logger.debug(f"Memberships retrieved successfully for user_id: {user_id}")
+        logger.debug(
+            f"Memberships retrieved successfully for user_id: {user_id}")
         return result
     except Exception as e:
         log_error(logger, e, {"user_id": user_id, "action": "get_memberships"})
+        raise
+
+
+@auth_router.post("/verify-email-password")
+async def verify_email_and_update_password(data: VerifyEmailAndPasswordUpdate):
+    """Verify email and update password (no authentication required)."""
+    logger.info(f"Verifying email and updating password for user_id: {data.user_id}")
+    try:
+        result = AuthService.verify_email_and_update_password(
+            data.user_id, data.new_password
+        )
+        logger.info(f"Email verified and password updated for user_id: {data.user_id}")
+        return result
+    except Exception as e:
+        log_error(logger, e, {"user_id": data.user_id, "action": "verify_email_and_update_password"})
         raise
