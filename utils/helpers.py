@@ -1,6 +1,9 @@
 from typing import List, Optional, Dict, Any, Set, Tuple
 from fastapi import HTTPException
 from keycloak.exceptions import KeycloakError
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 # --- Normalization & Validation ---
@@ -36,8 +39,10 @@ def validate_group_name_not_reserved(name: str, kind: str) -> str:
     """
     n = normalize_kc_name(name) or ""
     if not n:
+        logger.error(f"Group name validation failed: {kind} name is required")
         raise HTTPException(status_code=400, detail=f"{kind} name is required")
     if n in RESERVED_GROUP_NAMES:
+        logger.error(f"Group name validation failed: {kind} name '{name}' is reserved")
         raise HTTPException(
             status_code=400,
             detail=f"{kind} name '{name}' is reserved and cannot be used"
@@ -51,7 +56,8 @@ def get_group_id_by_path(kc_admin, path: str) -> Optional[str]:
     try:
         group = kc_admin.get_group_by_path(path)
         return group['id'] if group else None
-    except KeycloakError:
+    except KeycloakError as e:
+        logger.warning(f"Failed to get group by path '{path}': {e}")
         return None
 
 
@@ -59,6 +65,7 @@ def get_user_id_by_username(kc_admin, username: str) -> str:
     """Get user ID by username from Keycloak."""
     user_id = kc_admin.get_user_id(username)
     if not user_id:
+        logger.warning(f"User not found: {username}")
         raise HTTPException(
             status_code=404, detail=f"User '{username}' not found")
     return user_id
@@ -132,15 +139,17 @@ def list_members_recursive(kc, group_id: str) -> List[Dict[str, Any]]:
     collected: List[Dict[str, Any]] = []
     try:
         collected.extend(kc.get_group_members(group_id))
-    except KeycloakError:
+    except KeycloakError as e:
         # If the group exists but members fetch fails, treat as empty
+        logger.warning(f"Failed to get members for group {group_id}: {e}")
         pass
 
     try:
         group = kc.get_group(group_id)
         for sg in group.get("subGroups", []) or []:
             collected.extend(list_members_recursive(kc, sg["id"]))
-    except KeycloakError:
+    except KeycloakError as e:
+        logger.warning(f"Failed to get group or subgroups for {group_id}: {e}")
         pass
 
     return unique_users(collected)
@@ -150,6 +159,7 @@ def ensure_orgs_exist(kc, org_names: List[str]) -> None:
     """Verify that all specified organizations exist in Keycloak."""
     for org in org_names:
         if not get_group_id_by_path(kc, f"/{org}"):
+            logger.error(f"Organization not found: {org}")
             raise HTTPException(
                 status_code=404, detail=f"Organization '{org}' not found")
 
@@ -160,7 +170,8 @@ def is_user_in_scope(kc, target_user_id: str, scope_orgs: Set[str], scope_teams:
         return False
     try:
         t_groups = kc.get_user_groups(target_user_id) or []
-    except KeycloakError:
+    except KeycloakError as e:
+        logger.warning(f"Failed to get groups for user {target_user_id}: {e}")
         return False
     for g in t_groups:
         p = g.get("path", "")
