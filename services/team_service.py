@@ -76,6 +76,21 @@ class TeamService:
         return {"message": f"User '{username}' added as manager to {team_name}"}
 
     @staticmethod
+    def remove_team_manager(org_name: str, team_name: str, username: str) -> dict:
+        """Remove a manager from a team."""
+        kc = get_admin_client()
+        org_name = normalize_kc_name(org_name) or org_name
+        team_name = normalize_kc_name(team_name) or team_name
+        username = normalize_kc_name(username) or username
+        user_id = get_user_id_by_username(kc, username)
+        group_id = get_group_id_by_path(kc, f"/{org_name}/{team_name}/manager")
+
+        if not group_id:
+            raise HTTPException(status_code=404, detail="Group not found")
+        kc.group_user_remove(user_id, group_id)
+        return {"message": f"User '{username}' removed as manager from {team_name}"}
+
+    @staticmethod
     def add_team_member(org_name: str, team_name: str, username: str) -> dict:
         """Add a user as member to a team."""
         kc = get_admin_client()

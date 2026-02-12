@@ -66,6 +66,7 @@ class UserResponse(BaseModel):
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     enabled: bool
+    groups: Optional[List[str]] = None
 
 
 class AddUserRole(BaseModel):

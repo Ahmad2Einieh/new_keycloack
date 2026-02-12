@@ -16,6 +16,17 @@ class UserService:
     """Service for user management operations."""
 
     @staticmethod
+    def enrich_user_with_groups(kc, user: Dict[str, Any]) -> Dict[str, Any]:
+        """Add groups to user data by fetching from Keycloak."""
+        try:
+            user_groups = kc.get_user_groups(user.get("id"))
+            # Extract group paths
+            user["groups"] = [g.get("path", "") for g in user_groups if g.get("path")]
+        except KeycloakError:
+            user["groups"] = []
+        return user
+
+    @staticmethod
     def list_users(
         org_name: Optional[str],
         team_name: Optional[str],
@@ -50,7 +61,8 @@ class UserService:
                 kc, f"/{org_name}/{team_name}")
             if not team_group_id:
                 raise HTTPException(status_code=404, detail="Team not found")
-            return list_members_recursive(kc, team_group_id)
+            users = list_members_recursive(kc, team_group_id)
+            return [UserService.enrich_user_with_groups(kc, u) for u in users]
 
         if org_name:
             # org scope
@@ -61,11 +73,13 @@ class UserService:
             if not org_group_id:
                 raise HTTPException(
                     status_code=404, detail="Organization not found")
-            return list_members_recursive(kc, org_group_id)
+            users = list_members_recursive(kc, org_group_id)
+            return [UserService.enrich_user_with_groups(kc, u) for u in users]
 
         # No explicit scope -> infer from role
         if is_super:
-            return kc.get_users()
+            users = kc.get_users()
+            return [UserService.enrich_user_with_groups(kc, u) for u in users]
 
         if admin_orgs:
             all_users: List[Dict[str, Any]] = []
@@ -73,7 +87,8 @@ class UserService:
                 gid = get_group_id_by_path(kc, f"/{org}")
                 if gid:
                     all_users.extend(list_members_recursive(kc, gid))
-            return unique_users(all_users)
+            users = unique_users(all_users)
+            return [UserService.enrich_user_with_groups(kc, u) for u in users]
 
         if managed_teams:
             all_users = []
@@ -81,7 +96,8 @@ class UserService:
                 gid = get_group_id_by_path(kc, f"/{org}/{team}")
                 if gid:
                     all_users.extend(list_members_recursive(kc, gid))
-            return unique_users(all_users)
+            users = unique_users(all_users)
+            return [UserService.enrich_user_with_groups(kc, u) for u in users]
 
         raise HTTPException(
             status_code=403, detail="Not allowed to list users")
@@ -162,7 +178,8 @@ class UserService:
         groups = actor.get("groups", []) or []
         if "/super-admin" in groups:
             try:
-                return kc.get_user(user_id)
+                user = kc.get_user(user_id)
+                return UserService.enrich_user_with_groups(kc, user)
             except KeycloakError:
                 raise HTTPException(status_code=404, detail="User not found")
 
@@ -174,7 +191,8 @@ class UserService:
                 status_code=403, detail="Not allowed to view this user")
 
         try:
-            return kc.get_user(user_id)
+            user = kc.get_user(user_id)
+            return UserService.enrich_user_with_groups(kc, user)
         except KeycloakError:
             raise HTTPException(status_code=404, detail="User not found")
 

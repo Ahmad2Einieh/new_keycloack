@@ -39,6 +39,17 @@ async def add_team_manager(
     return TeamService.add_team_manager(org_name, team_name, data.username)
 
 
+@team_router.delete("/{team_name}/managers/{username}")
+async def remove_team_manager(
+    username: str,
+    org_name: str,
+    team_name: str,
+    user: dict = Depends(OrgAdminChecker())
+):
+    """Remove a manager from a team."""
+    return TeamService.remove_team_manager(org_name, team_name, username)
+
+
 @team_router.post("/{team_name}/members")
 async def add_team_member(
     data: AddUserRole,
